@@ -95,7 +95,7 @@ def evaluate_model(model, test_generator):
     accuracy = accuracy_score(y_true, y_pred)
     print(f'Accuracy: {accuracy*100:.2f}%')
 
-def main(build=False):
+def main(build_cat_dog=False, build_fruits=False):
     img_width, img_height = 224, 224
     batch_size = 32
 
@@ -107,7 +107,9 @@ def main(build=False):
     train_generator = image_normaliser.get_training_generator(train_dir, batch_size)
     test_generator = image_normaliser.get_test_generator(test_dir, batch_size)
 
-    if build:
+    print("Testing cats vs dogs classifier...")
+
+    if build_cat_dog:
         model = build_model(img_width, img_height)
         # model.compile(optimizer=Adam(learning_rate=0.0001),
         #               loss='binary_crossentropy',
@@ -127,6 +129,35 @@ def main(build=False):
         model = load_model('cats_vs_dogs_classifier.keras')
 
     evaluate_model(model, test_generator)
+
+    fruits_train_dir = "fruits/train/"
+    fruits_test_dir = "fruits/test/"
+
+    fruits_train_generator = image_normaliser.get_training_generator(fruits_train_dir, batch_size)
+    fruits_test_generator = image_normaliser.get_test_generator(fruits_test_dir, batch_size)
+
+    print("Testing fruits classifier...")
+
+    if build_fruits:
+        model = build_model(img_width, img_height)
+        # model.compile(optimizer=Adam(learning_rate=0.0001),
+        #               loss='binary_crossentropy',
+        #               metrics=['accuracy'])
+        optimizer = legacy.Adam(learning_rate=0.0001)
+        model.compile(optimizer=optimizer,
+                      loss='binary_crossentropy',
+                      metrics=['accuracy'])
+        
+
+        model.fit(fruits_train_generator, epochs=10,
+                validation_data=fruits_test_generator)
+
+        # Save the trained model
+        model.save('fruits_classifier.keras')
+    else:
+        model = load_model('fruits_classifier.keras')
+
+    evaluate_model(model, fruits_test_generator)
 
 if __name__ == "__main__":
     main()
