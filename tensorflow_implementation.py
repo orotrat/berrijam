@@ -50,48 +50,35 @@ class ImageNormaliser:
         return validation_generator
 
 def build_model(img_width, img_height):
-    # Load the MobileNetV2 model, excluding its top layer
-    base_model = MobileNetV2(weights='imagenet', include_top=False,
-                             input_shape=(img_width, img_height, 3))
+    base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(img_width, img_height, 3))
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
-    # Add a fully-connected layer
     x = Dense(1024, activation='relu')(x)
-    # Add a logistic layer -- we have 2 classes (cats and dogs)
     predictions = Dense(1, activation='sigmoid')(x)
 
-    # This is the model we will train
     model = Model(inputs=base_model.input, outputs=predictions)
 
-    # First: train only the top layers (which were randomly initialized)
-    # i.e., freeze all convolutional MobileNetV2 layers
     for layer in base_model.layers:
         layer.trainable = False
 
     return model
 
 def evaluate_model(model, test_generator):
-    # Ensure the test_generator does not use shuffling to yield consistent predictions
     test_generator.shuffle = False
     test_generator.batch_size = 1
 
-    # Predict on the test data
     Y_pred = model.predict(test_generator, steps=len(test_generator))
-    y_pred = np.where(Y_pred > 0.5, 1, 0).reshape(-1)  # Convert probabilities to binary predictions
+    y_pred = np.where(Y_pred > 0.5, 1, 0).reshape(-1) 
 
-    # True labels
     y_true = test_generator.classes
 
-    # Confusion Matrix
     conf_matrix = confusion_matrix(y_true, y_pred)
     print("Confusion Matrix:")
     print(conf_matrix)
 
-    # Classification Report
     print("Classification Report:")
     print(classification_report(y_true, y_pred, target_names=test_generator.class_indices.keys()))
 
-    # Accuracy
     accuracy = accuracy_score(y_true, y_pred)
     print(f'Accuracy: {accuracy*100:.2f}%')
 
